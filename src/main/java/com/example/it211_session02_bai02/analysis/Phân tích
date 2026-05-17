@@ -1,0 +1,19 @@
+1.Sự khác biệt cơ bạn giữa HTTP POST và HTTP PUT về mục đích và tính chất 'idempotent'
+-Mục đích:
+    +,HTTP POST: Tạo mới tài nguyên (Create)
+    +,HTTP PUT: Cập nhật hoặc Thay thế tài nguyên (Update / Replace)
+-Tính chất 'idempotent'
+    +,HTTP POST(không):Gửi yêu cầu nhiều lần sẽ tạo ra nhiều bản ghi
+    trùng lặp độc lập trong hệ thống
+    +,HTTP PUT(Có):Gửi yêu cầu nhiều lần với cùng dữ liệu thì trạng thái
+     hệ thống vẫn giữ nguyên như lần đầu, không sinh ra bản ghi mới.
+2.Lý do
+- Vì khi client gửi yêu cầu cập nhập mà tại thời điểm đó mạng nó bị lag hoặc là người dùng nhấn
+nút liên tục thì các yêu cầu POST song song sẽ đồng thời về server. Tại thời điểm đó, ID
+chưa kịp sinh ra hoặc chưa kịp phản hồi về, khiến các request sau tiếp tục rơi vào nhánh
+customer.getId() == null. Hệ thống lập tức sinh thêm ID mới và tạo thêm các bản ghi trùng lặp
+dữ liệu.
+-Vì nhánh else (khi object truyền lên có kèm id), nếu hệ thống không tìm thấy khách hàng nào
+khớp với ID đó (có thể do ID truyền sai, hoặc bản ghi cũ đã bị xóa trước đó), code cũ lại
+tự động thực hiện lệnh customers.add(customer). Điều này vi phạm nghiêm trọng quy tắc nghiệp
+vụ: Cập nhật thông tin khách hàng phải chỉ chỉnh sửa bản ghi hiện có, không tạo bản ghi mới.
